@@ -3,10 +3,12 @@ import cv2
 from source.cartoonize import Cartoonizer
 import os
 
+
 def process():
 
-    algo = Cartoonizer(dataroot='damo/cv_unet_person-image-cartoon_compound-models')
-    img = cv2.imread('input.png')[...,::-1]
+    algo = Cartoonizer(
+        dataroot='damo/cv_unet_person-image-cartoon_compound-models')
+    img = cv2.imread('input.png')[..., ::-1]
 
     result = algo.cartoonize(img)
 
@@ -14,10 +16,5 @@ def process():
     print('finished!')
 
 
-
-
 if __name__ == '__main__':
     process()
-
-
-

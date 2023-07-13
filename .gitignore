@@ -1,0 +1,14 @@
+.vscode/
+.idea/
+damo/
+data/
+*.mp4
+result*.png
+*.onnx
+res_style*/
+*.pt
+*.pyc
+*.pb
+temp/
+source/stylegan2/face_generation/experiment_stylegan/ffhq_style_s256/sample/
+source/stylegan2/pretrained_models/model_ir_se50.pth

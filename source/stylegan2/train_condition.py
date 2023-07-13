@@ -74,7 +74,8 @@ def d_r1_loss(real_pred, real_img):
         grad_real, = autograd.grad(
             outputs=real_pred.sum(), inputs=real_img, create_graph=True
         )
-    grad_penalty = grad_real.pow(2).reshape(grad_real.shape[0], -1).sum(1).mean()
+    grad_penalty = grad_real.pow(2).reshape(
+        grad_real.shape[0], -1).sum(1).mean()
 
     return grad_penalty
 
@@ -94,7 +95,8 @@ def g_path_regularize(fake_img, latents, mean_path_length, decay=0.01):
     )
     path_lengths = torch.sqrt(grad.pow(2).sum(2).mean(1))
 
-    path_mean = mean_path_length + decay * (path_lengths.mean() - mean_path_length)
+    path_mean = mean_path_length + decay * \
+        (path_lengths.mean() - mean_path_length)
 
     path_penalty = (path_lengths - path_mean).pow(2).mean()
 
@@ -130,7 +132,8 @@ def train(args, loader, generator, generator_source, discriminator, g_optim, d_o
     pbar = range(args.iter)
 
     if get_rank() == 0:
-        pbar = tqdm(pbar, initial=args.start_iter, dynamic_ncols=True, smoothing=0.01)
+        pbar = tqdm(pbar, initial=args.start_iter,
+                    dynamic_ncols=True, smoothing=0.01)
 
     mean_path_length = 0
 
@@ -142,7 +145,7 @@ def train(args, loader, generator, generator_source, discriminator, g_optim, d_o
     mean_path_length_avg = 0
     loss_dict = {}
 
-    ### add id loss, content loss
+    # add id loss, content loss
     g_id_loss = id_loss.IDLoss().to(device).eval()
 
     if args.distributed:
@@ -158,7 +161,8 @@ def train(args, loader, generator, generator_source, discriminator, g_optim, d_o
     r_t_stat = 0
 
     if args.augment and args.augment_p == 0:
-        ada_augment = AdaptiveAugment(args.ada_target, args.ada_length, 8, device)
+        ada_augment = AdaptiveAugment(
+            args.ada_target, args.ada_length, 8, device)
 
     # sample_z = torch.randn(args.n_sample, args.latent, device=device)
     sample_z = torch.load('noise.pt').to(device)
@@ -218,7 +222,8 @@ def train(args, loader, generator, generator_source, discriminator, g_optim, d_o
             r1_loss = d_r1_loss(real_pred, real_img)
 
             discriminator.zero_grad()
-            (args.r1 / 2 * r1_loss * args.d_reg_every + 0 * real_pred[0]).backward()
+            (args.r1 / 2 * r1_loss * args.d_reg_every +
+             0 * real_pred[0]).backward()
 
             d_optim.step()
 
@@ -230,14 +235,13 @@ def train(args, loader, generator, generator_source, discriminator, g_optim, d_o
         noise = mixing_noise(args.batch, args.latent, args.mixing, device)
         fake_img, _ = generator(noise)
 
-
         if args.augment:
             fake_img, _ = augment(fake_img, ada_aug_p)
 
         fake_pred = discriminator(fake_img)
         g_loss = g_nonsaturating_loss(fake_pred)
 
-        ### id loss
+        # id loss
         fake_img_source, _ = generator_source(noise)
         loss_id = g_id_loss(fake_img, fake_img_source)
         loss_id = float(loss_id)
@@ -245,7 +249,6 @@ def train(args, loader, generator, generator_source, discriminator, g_optim, d_o
         # print(loss_id)
 
         g_loss += loss_id*0.1
-
 
         loss_dict["g"] = g_loss
 
@@ -257,7 +260,8 @@ def train(args, loader, generator, generator_source, discriminator, g_optim, d_o
 
         if g_regularize:
             path_batch_size = max(1, args.batch // args.path_batch_shrink)
-            noise = mixing_noise(path_batch_size, args.latent, args.mixing, device)
+            noise = mixing_noise(
+                path_batch_size, args.latent, args.mixing, device)
             fake_img, latents = generator(noise, return_latents=True)
 
             path_loss, mean_path_length, path_lengths = g_path_regularize(
@@ -322,7 +326,8 @@ def train(args, loader, generator, generator_source, discriminator, g_optim, d_o
                 with torch.no_grad():
                     g_ema.eval()
                     sample, _ = g_ema([sample_z])
-                    outpath = os.path.join(args.output, args.name,'sample', str(i).zfill(6)+'.png')
+                    outpath = os.path.join(
+                        args.output, args.name, 'sample', str(i).zfill(6)+'.png')
                     utils.save_image(
                         sample,
                         outpath,
@@ -333,7 +338,8 @@ def train(args, loader, generator, generator_source, discriminator, g_optim, d_o
                     )
 
             if i % args.save_every == 0:
-                outpath_ckpt = os.path.join(args.output, args.name, 'models', str(i).zfill(6) + '.pt')
+                outpath_ckpt = os.path.join(
+                    args.output, args.name, 'models', str(i).zfill(6) + '.pt')
                 torch.save(
                     {
                         "g": g_module.state_dict(),
@@ -352,10 +358,12 @@ if __name__ == "__main__":
     device = "cuda"
 
     parser = argparse.ArgumentParser(description="StyleGAN2 trainer")
-    parser.add_argument('--config', type=str, default='config/conf_server_train_condition.json')
+    parser.add_argument('--config', type=str,
+                        default='config/conf_server_train_condition.json')
     parser.add_argument("--path", type=str, help="path to the lmdb dataset")
     parser.add_argument("--name", type=str, help="name of experiment")
-    parser.add_argument('--arch', type=str, default='stylegan2', help='model architectures (stylegan2 | swagan)')
+    parser.add_argument('--arch', type=str, default='stylegan2',
+                        help='model architectures (stylegan2 | swagan)')
     parser.add_argument(
         "--iter", type=int, default=800000, help="total training iterations"
     )
@@ -406,7 +414,8 @@ if __name__ == "__main__":
         type=str,
         help="path to the checkpoints to resume training",
     )
-    parser.add_argument("--lr", type=float, default=0.002, help="learning rate")
+    parser.add_argument("--lr", type=float, default=0.002,
+                        help="learning rate")
     parser.add_argument(
         "--channel_multiplier",
         type=int,
@@ -456,21 +465,21 @@ if __name__ == "__main__":
         for key, value in config.items():
             opt[key] = value
 
-    output_sample = os.path.join(args.output, args.name,'sample')
-    output_model = os.path.join(args.output, args.name,'models')
+    output_sample = os.path.join(args.output, args.name, 'sample')
+    output_model = os.path.join(args.output, args.name, 'models')
 
     if not os.path.exists(output_sample):
         os.makedirs(output_sample)
     if not os.path.exists(output_model):
         os.makedirs(output_model)
 
-
     n_gpu = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
     args.distributed = n_gpu > 1
 
     if args.distributed:
         torch.cuda.set_device(args.local_rank)
-        torch.distributed.init_process_group(backend="nccl", init_method="env://")
+        torch.distributed.init_process_group(
+            backend="nccl", init_method="env://")
         synchronize()
 
     args.latent = 512
@@ -488,7 +497,7 @@ if __name__ == "__main__":
         args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier
     ).to(device)
 
-    ### add source G
+    # add source G
     generator_source = Generator(
         args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier
     ).to(device)
@@ -524,7 +533,8 @@ if __name__ == "__main__":
 
         try:
             ckpt_name = os.path.basename(args.ckpt)
-            args.start_iter = int(os.path.splitext(ckpt_name)[0])
+            # args.start_iter = int(os.path.splitext(ckpt_name)[0])
+            args.start_iter = 0
 
         except ValueError:
             pass
@@ -534,11 +544,11 @@ if __name__ == "__main__":
         g_ema.load_state_dict(ckpt["g_ema"], strict=False)
 
     if args.ckpt_ffhq is not None:
-        ckpt_ffhq = torch.load(args.ckpt_ffhq, map_location=lambda storage, loc: storage)
+        ckpt_ffhq = torch.load(
+            args.ckpt_ffhq, map_location=lambda storage, loc: storage)
         generator_source.load_state_dict(ckpt_ffhq["g"], strict=False)
     else:
         print('No source ckpt!')
-
 
         # generator.load_state_dict(ckpt["g"])
         # discriminator.load_state_dict(ckpt["d"])
@@ -566,7 +576,8 @@ if __name__ == "__main__":
         [
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True),
+            transforms.Normalize(
+                (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True),
         ]
     )
 
@@ -574,11 +585,13 @@ if __name__ == "__main__":
     loader = data.DataLoader(
         dataset,
         batch_size=args.batch,
-        sampler=data_sampler(dataset, shuffle=True, distributed=args.distributed),
+        sampler=data_sampler(dataset, shuffle=True,
+                             distributed=args.distributed),
         drop_last=True,
     )
 
     if get_rank() == 0 and wandb is not None and args.wandb:
         wandb.init(project="stylegan 2")
 
-    train(args, loader, generator, generator_source, discriminator, g_optim, d_optim, g_ema, device)
+    train(args, loader, generator, generator_source,
+          discriminator, g_optim, d_optim, g_ema, device)

@@ -7,8 +7,9 @@ class IDLoss(nn.Module):
     def __init__(self):
         super(IDLoss, self).__init__()
         print('Loading ResNet ArcFace')
-        model_paths = '/data/vdb/qingyao/cartoon/mycode/pretrained_models/model_ir_se50.pth'
-        self.facenet = Backbone(input_size=112, num_layers=50, drop_ratio=0.6, mode='ir_se')
+        model_paths = 'pretrained_models/model_ir_se50.pth'
+        self.facenet = Backbone(
+            input_size=112, num_layers=50, drop_ratio=0.6, mode='ir_se')
         self.facenet.load_state_dict(torch.load(model_paths))
         self.face_pool = torch.nn.AdaptiveAvgPool2d((112, 112))
         self.facenet.eval()
@@ -30,8 +31,8 @@ class IDLoss(nn.Module):
         for i in range(n_samples):
             diff_input = y_hat_feats[i].dot(x_feats[i])
             id_logs.append({
-                            'diff_input': float(diff_input)
-                            })
+                'diff_input': float(diff_input)
+            })
             # loss += 1 - diff_target
             # modify
             loss += 1 - diff_input
