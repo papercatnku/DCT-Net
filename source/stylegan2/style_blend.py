@@ -6,6 +6,7 @@ from model import Generator
 import math
 import argparse
 
+
 def extract_conv_names(model):
     model = list(model.keys())
     conv_name = []
@@ -22,13 +23,12 @@ def blend_models(model_1, model_2, resolution, level, blend_width=None):
     size = 256
     latent = 512
     n_mlp = 8
-    channel_multiplier =2
+    channel_multiplier = 2
     G_1 = Generator(
         size, latent, n_mlp, channel_multiplier=channel_multiplier
     ).to(device)
     ckpt_ffhq = torch.load(model_1, map_location=lambda storage, loc: storage)
     G_1.load_state_dict(ckpt_ffhq["g"], strict=False)
-
 
     G_2 = Generator(
         size, latent, n_mlp, channel_multiplier=channel_multiplier
@@ -36,13 +36,11 @@ def blend_models(model_1, model_2, resolution, level, blend_width=None):
     ckpt_toon = torch.load(model_2)
     G_2.load_state_dict(ckpt_toon["g_ema"])
 
-
-
     # G_1 = stylegan2.models.load(model_1)
     # G_2 = stylegan2.models.load(model_2)
     model_1_state_dict = G_1.state_dict()
     model_2_state_dict = G_2.state_dict()
-    assert(model_1_state_dict.keys() == model_2_state_dict.keys())
+    assert (model_1_state_dict.keys() == model_2_state_dict.keys())
     G_out = G_1.clone()
 
     layers = []
@@ -73,7 +71,8 @@ def blend_models(model_1, model_2, resolution, level, blend_width=None):
     for y, layer in zip(ys, layers):
         out_state[layer] = y * model_2_state_dict[layer] + \
             (1 - y) * model_1_state_dict[layer]
-        print('blend layer %s'%str(y))
+        # print('blend layer %s' % str(y))
+        print('blend layer %s' % str(layer))
     G_out.load_state_dict(out_state)
     return G_out
 
@@ -87,7 +86,7 @@ def blend_models_2(model_1, model_2, resolution, level, blend_width=None):
     G_2 = stylegan2.models.load(model_2)
     model_1_state_dict = G_1.state_dict()
     model_2_state_dict = G_2.state_dict()
-    assert(model_1_state_dict.keys() == model_2_state_dict.keys())
+    assert (model_1_state_dict.keys() == model_2_state_dict.keys())
     G_out = G_1.clone()
 
     layers = []
@@ -116,18 +115,20 @@ def main(name):
 
     resolution = 4
 
-    model_name = '001000.pt'
+    model_name = '001400.pt'
 
     G_out = blend_models("pretrained_models/stylegan2-ffhq-config-f-256-550000.pt",
                          "face_generation/experiment_stylegan/"+name+"/models/"+model_name,
                          resolution,
                          None)
     # G_out.save('G_blend.pth')
-    outdir = os.path.join('face_generation/experiment_stylegan',name,'models_blend')
+    outdir = os.path.join(
+        'face_generation/experiment_stylegan', name, 'models_blend')
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    outpath = os.path.join(outdir, 'G_blend_'+str(model_name[:-3])+'_'+ str(resolution)+'.pt')
+    outpath = os.path.join(
+        outdir, 'G_blend_'+str(model_name[:-3])+'_' + str(resolution)+'.pt')
     torch.save(
         {
             "g_ema": G_out.state_dict(),
@@ -141,5 +142,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="style blender")
     parser.add_argument('--name', type=str, default='')
     args = parser.parse_args()
-    print('model name:%s'%args.name)
+    print('model name:%s' % args.name)
     main(args.name)

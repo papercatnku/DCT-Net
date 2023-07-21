@@ -1,6 +1,7 @@
 import os
 import cv2
 from modelscope.trainers.cv import CartoonTranslationTrainer
+import argparse
 
 
 def main(args):
@@ -24,13 +25,16 @@ def main(args):
         max_steps=max_steps)
     trainer.train()
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="process remove bg result")
-    parser.add_argument("--data_dir", type=str, default='', help="Path to training images.")
-    parser.add_argument("--work_dir", type=str, default='', help="Path to save results.")
-    parser.add_argument("--style", type=str, default='anime', help="resume training from similar style.")
+    parser.add_argument("--data_dir", type=str, default='',
+                        help="Path to training images.")
+    parser.add_argument("--work_dir", type=str, default='',
+                        help="Path to save results.")
+    parser.add_argument("--style", type=str, default='anime',
+                        help="resume training from similar style.")
 
     args = parser.parse_args()
 
     main(args)
-
